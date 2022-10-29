@@ -79,8 +79,49 @@ public class DivByZeroTransfer extends CFTransfer {
         AnnotationMirror zero = reflect(Zero.class);
         AnnotationMirror bottom = bottom();
 
+        // bottom always prevails
+        if (equal(lhs, bottom) || equal(rhs, bottom)) {
+            return glb(lhs, bottom);
+        }
+        
+        // in the following cases, we know that lhs or rhs is not bottom
+        if (operator == Comparison.EQ) {
+            return glb(lhs, rhs);
+        } else if (operator == Comparison.NE) {
+            // if ths is zero, then we can infer that it must be nonzero
+            if (equal(rhs, zero)) {
+                return glb(lhs, nonzero);
+            }         
+            // else we don't know, so it would be top
+        } else if (operator == Comparison.LT) {
+            // if < than zero or < negative, then we know that it must be negative
+            if (equal(rhs, zero) || equal(rhs, negative)) {
+                return glb(lhs, negative);
+            } 
+            // else we don't know, so it would be top
+        } else if (operator == Comparison.LE) {
+            // if <= negative, then it must be negative
+            if (equal(rhs, negative)) {
+                return glb(lhs, negative);
+            } 
+            // else we don't know, so it would be top
+            // e.g. <= positive, can be positive, zero, negative, nonzero
+            // similar examples apply to other cases
+        } else if (operator == Comparison.GT) {
+            // if > 0 or > positive, then it must be positive
+            if (equal(rhs, positive) || equal(rhs, zero)) {
+                return glb(lhs, positive);
+            } 
+            // else we don't know, so it would be top
+        } else if (operator == Comparison.GE) {
+            // if >= positive, then it must be positive
+            if (equal(rhs, positive)) {
+                return glb(lhs, positive);
+            } 
+            // else we don't know, so it would be top
+        }
 
-        return lhs;
+        return glb(lhs, top); // this is just top
     }
 
     /**

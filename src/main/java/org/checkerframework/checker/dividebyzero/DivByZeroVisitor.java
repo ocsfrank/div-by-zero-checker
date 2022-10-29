@@ -52,7 +52,7 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
             return false;
         }
 
-        // check if right operand is zero or top
+        // if rightOperand is either zero or top, then possible division by zero
         return hasAnnotation(rightOperand, Zero.class) || hasAnnotation(rightOperand, Top.class);
     }
 
@@ -82,6 +82,7 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
             return false;
         }
 
+        // if righHandSide is either zero or top, then possible division by zero
         return hasAnnotation(rightHandSide, Zero.class) || hasAnnotation(rightHandSide, Top.class);
     }
 
