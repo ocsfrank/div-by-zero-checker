@@ -72,6 +72,14 @@ public class DivByZeroTransfer extends CFTransfer {
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
         // TODO
+        AnnotationMirror top = top();
+        AnnotationMirror nonzero = reflect(NonZero.class);
+        AnnotationMirror positive = reflect(Positive.class);
+        AnnotationMirror negative = reflect(Negative.class);
+        AnnotationMirror zero = reflect(Zero.class);
+        AnnotationMirror bottom = bottom();
+
+
         return lhs;
     }
 
@@ -94,7 +102,89 @@ public class DivByZeroTransfer extends CFTransfer {
             AnnotationMirror lhs,
             AnnotationMirror rhs) {
         // TODO
-        return top();
+        AnnotationMirror top = top();
+        AnnotationMirror nonzero = reflect(NonZero.class);
+        AnnotationMirror positive = reflect(Positive.class);
+        AnnotationMirror negative = reflect(Negative.class);
+        AnnotationMirror zero = reflect(Zero.class);
+        AnnotationMirror bottom = bottom();
+        
+        // need to cover all cases of transfer functions
+        if (operator == BinaryOperator.PLUS) {
+            // bottom prevails on others
+            if (equal(lhs, bottom) || equal(rhs, bottom)) {
+                return bottom;
+            } else if (equal(lhs, top) || equal(rhs, top)) {
+                // top with anything non bottom -> top
+                return top;
+            } else if (equal(lhs, nonzero) || equal(rhs, nonzero)) {
+                // top and bottom excluded, anything plus nonzero is nonzero
+                return nonzero;
+            } else if (equal(rhs, zero)) {
+                // if rhs is zero, then result will be whatever lhs is positive, negative
+                return lhs;
+            } else if (equal(lhs, zero)) {
+                // if lhs is zero, then result will be whatever rhs is positive, negative
+                return rhs;
+            }
+        } else if (operator == BinaryOperator.MINUS) {
+            // bottom prevails on others
+            if (equal(lhs, bottom) || equal(rhs, bottom)) {
+                return bottom;
+            } else if (equal(lhs, top) || equal(rhs, top)) {
+                // top with anything non bottom -> top
+                return top;
+            } else if (equal(lhs, nonzero) || equal(rhs, nonzero)) {
+                // top and bottom excluded, anything minus nonzero is nonzero
+                return nonzero;
+            } else if (equal(lhs, zero)) {
+                // zero on lhs, rhs is its negation 
+                if (equal(rhs, positive)) {
+                    return negative;
+                } else if (equal(rhs, negative)) {
+                    return positive;
+                } else if (equal(rhs, zero)) {
+                    return zero;
+                }
+            } else if (equal(rhs, zero)) {
+                // zero on rhs, just return lhs
+                return lhs;
+            }
+
+        } else if (operator == BinaryOperator.TIMES) {
+            // bottom prevails on others
+            if (equal(rhs, bottom) || equal(lhs, bottom)) {
+                return bottom;
+            } else if (equal(lhs, zero) || equal(rhs, bottom)) {
+                // excluding above, anything * zero is zero
+                return zero;
+            } else if (equal(lhs, top) || equal(rhs, top)) {
+                // excluding above, anything * top is top
+                return top;
+            } else if (equal(lhs, nonzero) || equal(rhs, nonzero)) {
+                // excluding above, anything * nonzero is nonzero
+                return nonzero;
+            } else if (equal(lhs, rhs) && equal(lhs, positive)) {
+                // excluding above, pos*pos = pos
+                return positive;
+            } else if (equal(lhs, rhs) && equal(lhs, negative)) {
+                // excluding above, neg*neg = pos
+                return positive;
+            } else if (!equal(rhs, lhs) && (equal(lhs, negative) || equal(rhs, negative))) {
+                // excluding above, pos*neg = neg
+                return negative;
+            }
+        } else if (operator == BinaryOperator.DIVIDE || operator == BinaryOperator.MOD) {
+            if (equal(lhs, bottom) || equal(rhs, bottom) || equal(rhs, zero)) {
+                // if bottom on lhs or rhs, or zero on rhs res is bottom
+                return bottom;
+            } else if (equal(lhs, zero) && !equal(rhs, top) ) {
+                // excluding the first case, then if lhs is zero res is zero
+                return zero;
+            } // else is all top
+        }
+
+        return top;
     }
 
     // ========================================================================

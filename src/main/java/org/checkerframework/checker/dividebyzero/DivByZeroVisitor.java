@@ -5,6 +5,8 @@ import org.checkerframework.common.basetype.BaseTypeVisitor;
 
 import javax.lang.model.type.TypeKind;
 import java.lang.annotation.Annotation;
+
+import com.github.javaparser.ast.expr.Expression;
 import com.sun.source.tree.*;
 
 import java.util.Set;
@@ -30,7 +32,28 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
     private boolean errorAt(BinaryTree node) {
         // A BinaryTree can represent any binary operator, including + or -.
         // TODO
-        return false;
+        if (node == null) {
+            return false;
+        }
+
+        Tree.Kind opKind = node.getKind();
+
+        // if it is not / or %, we do not care
+        if (!DIVISION_OPERATORS.contains(opKind)) {
+            return false;
+        }
+
+        // It's / or %
+        ExpressionTree leftOperand = node.getLeftOperand();
+        ExpressionTree rightOperand = node.getRightOperand();
+
+        // we only care about integer division
+        if (!isInt(leftOperand) || !isInt(rightOperand)) {
+            return false;
+        }
+
+        // check if right operand is zero or top
+        return hasAnnotation(rightOperand, Zero.class) || hasAnnotation(rightOperand, Top.class);
     }
 
     /**
@@ -43,7 +66,23 @@ public class DivByZeroVisitor extends BaseTypeVisitor<DivByZeroAnnotatedTypeFact
         // A CompoundAssignmentTree represents any binary operator combined with an assignment,
         // such as "x += 10".
         // TODO
-        return false;
+        if (node == null) {
+            return false;
+        }
+        
+        Tree.Kind opKind = node.getKind();
+        // if it is not / or %, we do not care
+        if (!DIVISION_OPERATORS.contains(opKind)) {
+            return false;
+        }
+
+        // it is probably fine if left hand side is a long. int will be converted
+        ExpressionTree rightHandSide = node.getExpression();
+        if (!isInt(rightHandSide)) {
+            return false;
+        }
+
+        return hasAnnotation(rightHandSide, Zero.class) || hasAnnotation(rightHandSide, Top.class);
     }
 
     // ========================================================================
